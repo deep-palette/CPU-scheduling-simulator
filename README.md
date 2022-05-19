@@ -1,1 +1,1 @@
-# OS-simulator
+# CPU scheduling simulator
