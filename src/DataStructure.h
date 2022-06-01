@@ -6,9 +6,9 @@
 typedef struct _Process {
 	int pid;          /* unique identifier of a process */
 	int burst_time; /* time length to be processed by CPU */
-//	int io_burst_time;  /* time length to be processed by I/O */ //�ʿ��Ѱ�??
-	int arrival_time;   /* time at which process has created */
-	int priority;              /* the smaller value is, the higher priority is */
+//	int io_burst_time;  /* time length to be processed by I/O */ //ÇÊ¿äÇÑ°¡??
+	int arrival_time;   /* time at which process has arrived */
+	int priority;              /* the smaller value is higher*/
 
 	int waiting_time;    /* waiting time of process */
 	int turnaround_time; /* turnaround time of process */
