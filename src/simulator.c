@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include
-#include "../include/DataStructure.h"
+#include "DataStructure.h"
+#include "cpu.scheduler.h"
 
 #define TIME_QUANTUM 10 /* time quantum value used in RR */
 #define CUTTER 10       /* the number of blocks in each line of gantt chart */
