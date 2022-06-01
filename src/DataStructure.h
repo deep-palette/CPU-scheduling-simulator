@@ -56,7 +56,7 @@ ProcessPtr Priority_Top(Priority_Queue* queue);
 int Priority_IsEmpty(Priority_Queue* queue);
 int SJF_Compare(ProcessPtr a, ProcessPtr b);
 int Priority_Compare(ProcessPtr a, ProcessPtr b);
-int IO_Burst_Compare(ProcessPtr a, ProcessPtr b);
+/*int IO_Burst_Compare(ProcessPtr a, ProcessPtr b); - > no need*/
 
 
 
