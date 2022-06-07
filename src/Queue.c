@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h> 
 #include "DataStructure.h"
+#include "ProcessSimulator.h"
 
 
 int Queue_Init(Queue** queue)

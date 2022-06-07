@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "DataStructure.h"
+#include "ProcessSimulator.h"
 
 #define SWAP(a, b)                   \
   ProcessPtr tmp = a->process_ptr;   \
@@ -11,6 +12,8 @@
 
 int Priority_Init(Priority_Queue** queue, int (*compare)(ProcessPtr a, ProcessPtr b)) //새로 Priority Queue생성
 {
+    *queue = (Priority_Queue*)malloc(sizeof(Priority_Queue));
+
     if ((*queue) == NULL) {
         printf("Error log: Priority_Init error\n");
         exit(-1);
@@ -200,13 +203,3 @@ int Priority_Compare(ProcessPtr a, ProcessPtr b)
     return a->priority != b->priority ? a->priority < b->priority
         : a->pid < b->pid;
 }   //priority값이 작은게 튀어나옴
-
-
-/* 이거 안쓰지 않음?
-int IO_Burst_Compare(ProcessPtr a, ProcessPtr b)
-{
-    return a->io_burst_time != b->io_burst_time
-        ? a->io_burst_time < b->io_burst_time
-        : a->pid < b->pid;
-}
-*/
