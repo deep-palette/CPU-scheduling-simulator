@@ -19,7 +19,6 @@ int initSimulator(Simulator** simulator, int pflag) {
     (*simulator)->num_process = 0;
     (*simulator)->cur_cpu_burst = NULL;
     (*simulator)->elapsed_time = 0;
-    (*simulator)->idle_time = 0;
     (*simulator)->avg_waiting_time = 0;
     (*simulator)->avg_turnaround_time = 0;
     (*simulator)->avg_response_time = 0;
@@ -35,6 +34,9 @@ int initSimulator(Simulator** simulator, int pflag) {
         Priority_Init((Priority_Queue**)&((*simulator)->ready_queue), SJF_Compare);
         break;
     case NON_PREEMPTIVE_PRIORITY:
+        Priority_Init((Priority_Queue**)&((*simulator)->ready_queue), Priority_Compare);
+        break;
+    case PREEMPTIVE_PRIORITY:
         Priority_Init((Priority_Queue**)&((*simulator)->ready_queue), Priority_Compare);
         break;
     default:
@@ -200,7 +202,7 @@ void Simulator_LoadProcess(Simulator* simulator) {
     if (simulator->cur_cpu_burst == NULL) {
         if (!Queue_IsEmpty(ready_queue)) {
             simulator->cur_cpu_burst = Queue_Front(ready_queue);
-            //   if (simulator->cur_cpu_burst->isResponsed == 0) simulator->cur_cpu_burst->isResponsed = 1;
+         if (simulator->cur_cpu_burst->isResponsed == 0) simulator->cur_cpu_burst->isResponsed = 1;
             Queue_Dequeue(ready_queue);
         }
     }
@@ -216,7 +218,7 @@ void Simulator_LoadProcess_Priority(Simulator* simulator) {
     if (simulator->cur_cpu_burst == NULL) {
         if (!Priority_IsEmpty(ready_queue)) {
             simulator->cur_cpu_burst = Priority_Top(ready_queue);
-            // if (simulator->cur_cpu_burst->isResponsed == 0) simulator->cur_cpu_burst->isResponsed = 1;
+         if (simulator->cur_cpu_burst->isResponsed == 0) simulator->cur_cpu_burst->isResponsed = 1;
             Priority_Dequeue(ready_queue);
         }
     }
@@ -232,7 +234,7 @@ void Simulator_LoadProcess_Priority_Preemptive(Simulator* simulator) {
     if (simulator->cur_cpu_burst == NULL) {
         if (!Priority_IsEmpty(ready_queue)) {
             simulator->cur_cpu_burst = Priority_Top(ready_queue);
-            // if (simulator->cur_cpu_burst->isResponsed == 0) simulator->cur_cpu_burst->isResponsed = 1;
+        if (simulator->cur_cpu_burst->isResponsed == 0) simulator->cur_cpu_burst->isResponsed = 1;
             Priority_Dequeue(ready_queue);
         }
         simulator->cur_cpu_burst->waiting_time = simulator->cur_cpu_burst->waiting_time - 1;
@@ -246,7 +248,7 @@ void Simulator_LoadProcess_Priority_Preemptive(Simulator* simulator) {
 void Simulator_Eval(Simulator* simulator) {
     Priority_Queue* terminated_processes = simulator->terminated_processes;
     ProcessPtr tmp;
-    double CPU_utilization = (double)(simulator->elapsed_time + 1 - simulator->idle_time) / simulator->elapsed_time;
+    double CPU_utilization = (double)(simulator->elapsed_time + 1) / simulator->elapsed_time;
 
     int w_time[100];
     int t_time[100];
@@ -338,11 +340,6 @@ int Simulator_CPU_Burst(Simulator* simulator) {
             }
         }
     }
-    else { /* CPU is in idle */
-        simulator->idle_time++;
-        printf("[  IDLE  ]");
-    }
-
     /* Limit the number of blocks in each line of gantt chart */
     if ((simulator->elapsed_time + 1) % 10 == 0) {
         printf("\n");
@@ -369,17 +366,20 @@ int Simulator_CPU_Burst_Preemptive(Simulator* simulator) {
         /* Currently running process is preempted */
         simulator->cur_cpu_burst->waiting_time = simulator->cur_cpu_burst->waiting_time + 1;
         simulator->cur_cpu_burst->turnaround_time = simulator->cur_cpu_burst->turnaround_time + 1;
-        simulator->cur_cpu_burst->isResponsed = 1;
+        //simulator->cur_cpu_burst->isResponsed = 1;
         Priority_Enqueue(ready_queue, simulator->cur_cpu_burst);
         simulator->cur_cpu_burst = NULL;
         /* Allocate CPU to another process */
         Simulator_LoadProcess_Priority_Preemptive(simulator);
+
     }
 
     if (simulator->cur_cpu_burst) { /* running process exists */
         simulator->cur_cpu_burst->turnaround_time++;
         simulator->cur_cpu_burst->burst_time--;
-        if (simulator->cur_cpu_burst->isResponsed == 0) simulator->cur_cpu_burst->response_time++;
+        simulator->cur_cpu_burst->isResponsed = 1;
+
+       // if (simulator->cur_cpu_burst->isResponsed == 0) simulator->cur_cpu_burst->response_time++;
         printf("[ %6d ]", simulator->cur_cpu_burst->pid); /* display gantt chart */
 
         if (simulator->cur_cpu_burst->burst_time == 0) { /* Process has completely processed, move to terminated_process */
@@ -395,11 +395,6 @@ int Simulator_CPU_Burst_Preemptive(Simulator* simulator) {
             }
         }
     }
-    else { /* CPU is in idle */
-        simulator->idle_time++;
-        printf("[  IDLE  ]");
-    }
-
     /* Limit the number of blocks in each line of gantt chart */
     if ((simulator->elapsed_time + 1) % 10 == 0) {
         printf("\n");
@@ -445,11 +440,6 @@ int Simulator_CPU_Burst_RR(Simulator* simulator, int* time_quantum, int maxtime)
             }
         }
     }
-    else { /* CPU is in idle */
-        simulator->idle_time++;
-        printf("[  IDLE  ]");
-    }
-
     /* Limit the number of blocks in each line of gantt chart */
     if ((simulator->elapsed_time + 1) % 10 == 0) {
         printf("\n");
@@ -568,6 +558,23 @@ void Simulator_RR(Simulator* simulator, int maxtime) {
     }
     return;
 }
+void Simulator_PreemptivePriority(Simulator* simulator) {
+    Priority_Queue* ready_queue = simulator->ready_queue;
+
+    printf("\n# Preemptive Priority Algorithm Algorithm\n\n");
+    while (1) {
+
+        Simulator_LoadReadyQueue(simulator);
+
+        Simulator_LoadProcess_Priority(simulator);
+        Simulator_Priority_Waiting(ready_queue->top);
+        
+        if (Simulator_CPU_Burst_Preemptive(simulator)) return;
+
+        simulator->elapsed_time++;
+    }
+
+}
 
 
 void Simulator_Start(Simulator* simulator, int time_quantum) {
@@ -586,6 +593,9 @@ void Simulator_Start(Simulator* simulator, int time_quantum) {
         break;
     case RR:
         Simulator_RR(simulator, time_quantum);
+        break;
+    case PREEMPTIVE_PRIORITY:
+        Simulator_PreemptivePriority(simulator);
         break;
     default:
         printf("Error\n");
@@ -623,6 +633,9 @@ void Simulator_Terminate(Simulator** simulators) {
         case NON_PREEMPTIVE_PRIORITY:
             printf("++   Nonpreemptive Priority  ++  ");
             break;
+        case PREEMPTIVE_PRIORITY:
+            printf("++    Preemptive Priority    ++  ");
+            break;
 
         default:
             printf("Error\n");
@@ -632,7 +645,7 @@ void Simulator_Terminate(Simulator** simulators) {
         printf(
             "%8.3f  ++ %10.3f ++ %10.3f ++  %10.3f "
             " ++\n",
-            (double)(simulators[i]->elapsed_time - simulators[i]->idle_time) /
+            (double)(simulators[i]->elapsed_time) /
             simulators[i]->elapsed_time,
             simulators[i]->avg_waiting_time, simulators[i]->avg_turnaround_time,
             simulators[i]->avg_response_time);
@@ -645,3 +658,13 @@ void Simulator_Terminate(Simulator** simulators) {
 
     return;
 }
+
+/*Psuedo code for response time
+* I/O 시간 변수를 쓰지 않기 때문에,
+* response_time = waiting_time.
+* p[i].waiting_time = p[i] 실행 시작 시간 - [pi]도착 시간
+* p[i].실행 시작 시간 = total_return_time,
+* p[i].waiting_time = total_return_time - [pi]arrival_time;
+* p[i].response_time =p[i].waiting_time;
+* total_response_time += p[i].response_time;
+*/
